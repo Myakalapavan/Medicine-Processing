@@ -1,0 +1,317 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. CA11G061.
+       AUTHOR. PAVAN.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT IF001-INFILE ASSIGN TO INPMEDPS
+           ORGANIZATION IS SEQUENTIAL
+           ACCESS MODE IS SEQUENTIAL
+           FILE STATUS IS WS-FS1.
+           SELECT OF001-OUTFILE ASSIGN TO OUTMEDPS
+           ORGANIZATION IS INDEXED
+           ACCESS MODE IS SEQUENTIAL
+           RECORD KEY IS O1-MED-CODE
+           FILE STATUS IS WS-FS2.
+           SELECT OF002-OUTFILE ASSIGN TO OUTMEDS2
+           ORGANIZATION IS SEQUENTIAL
+           ACCESS MODE IS SEQUENTIAL
+           FILE STATUS IS WS-FS3.
+           SELECT OF003-OUTFILE ASSIGN TO OUTMEDER
+           ORGANIZATION IS SEQUENTIAL
+           ACCESS MODE IS SEQUENTIAL
+           FILE STATUS IS WS-FS4.
+       DATA DIVISION.
+       FILE SECTION.
+       FD IF001-INFILE.
+       01 IF001-INREC.
+         05 I-MED-CODE PIC X(3).
+         05 FILLER     PIC X.
+         05 I-DOSAGE   PIC X(1).
+         05 FILLER     PIC X.
+         05 I-QTY      PIC X(3).
+         05 FILLER     PIC X.
+         05 I-EXP      PIC X(7).
+         05 FILLER     PIC X.
+         05 I-RATE     PIC 9(2).9(2).
+         05 FILLER     PIC X(57).
+       FD OF001-OUTFILE.
+       01 OF001-OUTREC.
+         05 O1-MED-CODE PIC X(3).
+         05 FILLER PIC X.
+         05 O1-QTY PIC 9(3).
+         05 FILLER PIC X.
+         05 O1-EXP PIC X(7).
+         05 FILLER PIC X.
+         05 O1-ORDER PIC X(7).
+         05 FILLER PIC X.
+         05 O1-CLASS PIC X(4).
+         05 FILLER PIC X.
+         05 O1-RATE PIC 9(2).9(2).
+         05 FILLER PIC X.
+         05 O1-DISC-RATE PIC 9(2).9(2).
+         05 FILLER PIC X.
+         05 O1-TOTAL PIC 9(5).9(2).
+         05 FILLER PIC X(31).
+       FD OF002-OUTFILE.
+       01 OF002-OUTREC.
+         05 O2-MED-CODE PIC X(3).
+         05 FILLER PIC X.
+         05 O2-QTY PIC 9(3).
+         05 FILLER PIC X.
+         05 O2-EXP PIC X(7).
+         05 FILLER PIC X.
+         05 O2-ORDER PIC X(7).
+         05 FILLER PIC X.
+         05 O2-CLASS PIC X(4).
+         05 FILLER PIC X.
+         05 O2-RATE PIC 9(2).9(2).
+         05 FILLER PIC X.
+         05 O2-DISC-RATE PIC 9(2).9(2).
+         05 FILLER PIC X.
+         05 O2-TOTAL PIC 9(5).9(2).
+         05 FILLER PIC X(31).
+       FD OF003-OUTFILE.
+       01 OF003-OUTREC.
+         05 O3-MED-CODE PIC X(3).
+         05 FILLER      PIC X.
+         05 O3-DOSAGE   PIC X(1).
+         05 FILLER      PIC X.
+         05 O3-QTY      PIC X(3).
+         05 FILLER      PIC X.
+         05 O3-EXP      PIC X(7).
+         05 FILLER      PIC X.
+         05 O3-RATE     PIC 9(2)V99.
+         05 FILLER      PIC X(58).
+       WORKING-STORAGE SECTION.
+       01 WS-FS1 PIC 9(2).
+       01 WS-FS2 PIC 9(2).
+       01 WS-FS3 PIC 9(2).
+       01 WS-FS4 PIC 9(2).
+       01 WS-RATE PIC 9(2)V99.
+       01 WS-QTY PIC 9(3).
+       01 WS-ORDER PIC X(7).
+       01 WS-CLASS PIC X(4).
+       01 WS-DISC-RATE PIC 9(2)V99.
+       01 WS-TOTAL PIC 9(5)V99.
+       01 WS-IDX PIC 9(2) VALUE 1.
+       01 WS-MED-TABLE.
+         05 MED-ENTRY OCCURS 10 TIMES.
+          10 T-MED-CODE PIC X(3).
+          10 FILLER PIC X.
+          10 T-QTY PIC 9(3).
+          10 FILLER PIC X.
+          10 T-EXP PIC X(7).
+          10 FILLER PIC X.
+          10 T-ORDER PIC X(7).
+          10 FILLER PIC X.
+          10 T-CLASS PIC X(4).
+          10 FILLER PIC X.
+          10 T-RATE PIC 9(2)V99.
+          10 FILLER PIC X.
+          10 T-DISC-RATE PIC 9(2)V99.
+          10 FILLER PIC X.
+          10 T-TOTAL PIC 9(5)V99.
+          10 FILLER PIC X(34).
+       PROCEDURE DIVISION.
+       MAIN-PARA.
+           PERFORM INIT-PARA THRU
+                   INIT-PARA-EXIT
+           PERFORM PROCESS-PARA THRU
+                   PROCESS-PARA-EXIT
+           PERFORM TERM-PARA THRU
+                   TERM-PARA-EXIT.
+       MAIN-PARA-EXIT.
+           EXIT.
+       INIT-PARA.
+           INITIALIZE WS-FS1 WS-FS2 WS-FS3 WS-FS4.
+       INIT-PARA-EXIT.
+           EXIT.
+       PROCESS-PARA.
+           PERFORM OPEN-PARA THRU
+                   OPEN-PARA-EXIT
+           PERFORM READ-PARA THRU
+                   READ-PARA-EXIT UNTIL WS-FS1 = 10
+           PERFORM TABLE-KSDS-PARA
+           PERFORM CLOSE-PARA THRU
+                   CLOSE-PARA-EXIT.
+       PROCESS-PARA-EXIT.
+           EXIT.
+       OPEN-PARA.
+           OPEN INPUT IF001-INFILE
+           EVALUATE TRUE
+             WHEN WS-FS1 = 00
+               DISPLAY "INFILE OPENED"
+             WHEN OTHER
+               DISPLAY "INFILE NOT OPENED" WS-FS1
+           END-EVALUATE
+           OPEN OUTPUT OF001-OUTFILE
+           EVALUATE TRUE
+             WHEN WS-FS2 = 00
+               DISPLAY "OUTFILE1 OPENED"
+             WHEN OTHER
+               DISPLAY "OUTFILE1 NOT OPENED" WS-FS2
+           END-EVALUATE
+           OPEN OUTPUT OF002-OUTFILE
+           EVALUATE TRUE
+             WHEN WS-FS3 = 00
+               DISPLAY "OUTFILE2 OPENED"
+             WHEN OTHER
+               DISPLAY "OUTFILE2 NOT OPENED" WS-FS3
+           END-EVALUATE
+           OPEN OUTPUT OF003-OUTFILE
+           EVALUATE TRUE
+             WHEN WS-FS4 = 00
+               DISPLAY "OUTFILE3 OPENED"
+             WHEN OTHER
+               DISPLAY "OUTFILE3 NOT OPENED" WS-FS4
+           END-EVALUATE.
+       OPEN-PARA-EXIT.
+           EXIT.
+       READ-PARA.
+           READ IF001-INFILE
+           EVALUATE TRUE
+             WHEN WS-FS1 = 00
+               PERFORM VALIDATE-PARA
+             WHEN WS-FS1 = 10
+               CONTINUE
+             WHEN OTHER
+               DISPLAY "READ FAILS" WS-FS1
+           END-EVALUATE.
+       READ-PARA-EXIT.
+           EXIT.
+       VALIDATE-PARA.
+           MOVE I-RATE TO WS-RATE
+           IF (I-MED-CODE = SPACES) AND
+             (I-DOSAGE NOT = 'L' OR 'M' OR 'H') AND
+             (I-QTY IS NOT NUMERIC) AND
+             (I-EXP NOT = 'EXP' OR 'NOT-EXP') AND
+             (WS-RATE IS NOT NUMERIC)
+             PERFORM WRITE-PARA
+           ELSE
+              PERFORM PROCESS1-PARA
+           END-IF.
+       VALIDATE-PARA-EXIT.
+           EXIT.
+       WRITE-PARA.
+           MOVE I-MED-CODE TO O3-MED-CODE
+           MOVE I-DOSAGE TO O3-DOSAGE
+           MOVE I-QTY TO O3-QTY
+           MOVE I-EXP TO O3-EXP
+           MOVE I-RATE TO O3-RATE
+           WRITE OF003-OUTREC.
+       WRITE-PARA-EXIT.
+           EXIT.
+       PROCESS1-PARA.
+           EVALUATE TRUE
+           WHEN I-QTY < 100 AND I-EXP = 'NOT-EXP'
+             MOVE 250 TO WS-QTY
+             MOVE 'REORDER' TO WS-ORDER
+           WHEN I-QTY < 100 AND I-EXP = 'EXP'
+             MOVE 50 TO WS-QTY
+             MOVE 'REPLACE' TO WS-ORDER
+           WHEN I-QTY > 100 AND I-EXP = 'EXP'
+             MOVE 0 TO WS-QTY
+             MOVE 'STPSELL' TO WS-ORDER
+           WHEN OTHER
+             GO TO READ-PARA
+           END-EVALUATE
+           EVALUATE TRUE
+           WHEN I-DOSAGE = 'L'
+             MOVE 'SCH1' TO WS-CLASS
+           WHEN I-DOSAGE = 'M'
+             MOVE 'SCH2' TO WS-CLASS
+           WHEN I-DOSAGE = 'H'
+             MOVE 'SCH3' TO WS-CLASS
+           END-EVALUATE
+           COMPUTE WS-DISC-RATE = WS-RATE - (WS-RATE * 20 / 100)
+           COMPUTE WS-TOTAL = WS-QTY * WS-DISC-RATE
+           PERFORM STORE-TABLE-PARA.
+       PROCESS1-PARA-EXIT.
+           EXIT.
+       STORE-TABLE-PARA.
+           MOVE I-MED-CODE TO T-MED-CODE(WS-IDX)
+           MOVE WS-QTY TO T-QTY(WS-IDX)
+           MOVE I-EXP TO T-EXP(WS-IDX)
+           MOVE WS-ORDER TO T-ORDER(WS-IDX)
+           MOVE WS-CLASS TO T-CLASS(WS-IDX)
+           MOVE I-RATE TO T-RATE(WS-IDX)
+           MOVE WS-DISC-RATE TO T-DISC-RATE(WS-IDX)
+           MOVE WS-TOTAL TO T-TOTAL(WS-IDX)
+           ADD 1 TO WS-IDX.
+       STORE-TABLE-PARA-EXIT.
+           EXIT.
+       TABLE-KSDS-PARA.
+           PERFORM VARYING WS-IDX FROM 1 BY 1 UNTIL WS-IDX > 10
+           EVALUATE TRUE
+           WHEN T-CLASS(WS-IDX) = 'SCH1' OR 'SCH3'
+            MOVE SPACES TO OF001-OUTREC
+            MOVE T-MED-CODE(WS-IDX) TO O1-MED-CODE
+            MOVE T-QTY(WS-IDX) TO O1-QTY
+            MOVE T-EXP(WS-IDX) TO O1-EXP
+            MOVE T-ORDER(WS-IDX) TO O1-ORDER
+            MOVE T-CLASS(WS-IDX) TO O1-CLASS
+            MOVE T-RATE(WS-IDX) TO O1-RATE
+            MOVE T-DISC-RATE(WS-IDX) TO O1-DISC-RATE
+            MOVE T-TOTAL(WS-IDX) TO O1-TOTAL
+            WRITE OF001-OUTREC
+            IF WS-FS2 = 00
+             DISPLAY "WRITE SUCCESS"
+            ELSE
+             DISPLAY "WRITE NOT SUCCESS" WS-FS2
+            END-IF
+           WHEN T-CLASS(WS-IDX) = 'SCH2'
+            MOVE T-MED-CODE(WS-IDX) TO O2-MED-CODE
+            MOVE T-QTY(WS-IDX) TO O2-QTY
+            MOVE T-EXP(WS-IDX) TO O2-EXP
+            MOVE T-ORDER(WS-IDX) TO O2-ORDER
+            MOVE T-CLASS(WS-IDX) TO O2-CLASS
+            MOVE T-RATE(WS-IDX) TO O2-RATE
+            MOVE T-DISC-RATE(WS-IDX) TO O2-DISC-RATE
+            MOVE T-TOTAL(WS-IDX) TO O2-TOTAL
+            WRITE OF002-OUTREC
+            IF WS-FS3 = 00
+             DISPLAY "WRITE SUCCESS"
+            ELSE
+             DISPLAY "WRITE NOT SUCCESS" WS-FS3
+            END-IF
+           END-EVALUATE
+           END-PERFORM.
+        TABLE-KSDS-PARA-EXIT.
+           EXIT.
+        CLOSE-PARA.
+            CLOSE IF001-INFILE
+            EVALUATE TRUE
+            WHEN WS-FS1 = 00
+            DISPLAY "FILE1 CLOSED"
+            WHEN OTHER
+            DISPLAY "FILE NOT CLOSED" WS-FS1
+            END-EVALUATE.
+            CLOSE OF001-OUTFILE
+            EVALUATE TRUE
+            WHEN WS-FS2 = 00
+            DISPLAY "FILE2 CLOSED"
+            WHEN OTHER
+            DISPLAY "FILE NOT CLOSED" WS-FS2
+            END-EVALUATE.
+            CLOSE OF002-OUTFILE
+            EVALUATE TRUE
+            WHEN WS-FS3 = 00
+            DISPLAY "FILE3 CLOSED"
+            WHEN OTHER
+            DISPLAY "FILE NOT CLOSED" WS-FS3
+            END-EVALUATE.
+            CLOSE OF003-OUTFILE
+            EVALUATE TRUE
+            WHEN WS-FS4 = 00
+            DISPLAY "FILE4 CLOSED"
+            WHEN OTHER
+            DISPLAY "FILE NOT CLOSED" WS-FS4
+            END-EVALUATE.
+       CLOSE-PARA-EXIT.
+            EXIT.
+       TERM-PARA.
+           STOP RUN.
+       TERM-PARA-EXIT.
+           EXIT.
+
